@@ -25,7 +25,7 @@ rm -rf $TMP/$PACKAGE
 
 gem uninstall spawnpocassets
 
-git clone git://github.com/gdndude/spawnpocassets.git
+git clone https://github.com/gdndude/spawnpocassets.git
 cd $PACKAGE
 git checkout $VERSION
 
@@ -44,7 +44,9 @@ rake install
 rake release
 
 #Create a deb package using fpm and we will also go ahead and install it
-fpm -s gem -t deb spawnpocassets
+gem fetch $PACKAGE --version $VERSION
+fpm -s gem -t deb spawnpocassets-$VERSION.gem
+dpkg --purge rubygem-$PACKAGE
 dpkg --install *.deb
   
 #Check if there is an error
@@ -54,4 +56,4 @@ if [ $? -gt 0 ]
 fi 
 
 #We push an updated tag that indicates if $VERSION was built and deployed successfully or not
-git push --tags git@github.com:gdndude/spawnpocassets.git 
+git push --tags 
