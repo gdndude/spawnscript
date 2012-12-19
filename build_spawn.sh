@@ -1,12 +1,13 @@
 #!/bin/bash
+# build_spawn.sh  12/19/2012  Greg Newton gdndude@gmail.com
 #Creates a new spawn_assets gem from git
 #Also based on the environment variable BUILD_NUMBER or 
 #this can be passed on command line, command line version takes precedence
 #for in-flight build versions the build will pull from the HEAD branch
 
 TMP="/tmp"
-PACKAGE="spawnpoc"
-VERSION="master"
+PACKAGE="spawnpocassets"
+VERSION="0.0.1"
 if [ -n "${BUILD_NUMBER:+x}" ]
 	then VERSION=$BUILD_NUMBER
 fi
@@ -14,21 +15,43 @@ fi
 if [ -n "${1:+1}" ]
 	then VERSION=$1
 fi
-echo $VERSION
+echo "Building " $VERSION
 
 #Retrieve the correct version into a tmp directory
 cd $TMP
 #First let's clean out the working directory to avoid any issues
 rm -rf $TMP/$PACKAGE
-git clone -b $VERSION git://github.com/gdndude/spawnpoc.git
+#Then we are going to remove the gem, strictly speaking this is not required but we're doing it to avoid confusion
 
-#Build the gem
+gem uninstall spawnpocassets
+
+git clone git://github.com/gdndude/spawnpocassets.git
 cd $PACKAGE
-gem build spawnpoc_assets.gemspec
+git checkout $VERSION
 
+#Build the gem and install it using the native tools, this makes the deb packing irrelevant
+#But we will to that anyway since averyone asked so nicely
+gem build spawnpocassets.gemspec
+
+#Some of this is brute force, we're pushing the asset each time which might be redundant
+gem push spawnpocassets-$VERSION.gem
+
+#We install into the local CI environment to allow fpm to perform it's magic
+bundle
+rake -T
+rake build
+rake install 
+rake release
+
+#Create a deb package using fpm and we will also go ahead and install it
+fpm -s gem -t deb spawnpocassets
+dpkg --install *.deb
+  
 #Check if there is an error
 if [ $? -gt 0 ]
 	then git tag build-failure-$VERSION
 	else git tag build-success-$VERSION
 fi 
-git push --tags https://github.com/gdndude/spawnpoc.git
+
+#We push an updated tag that indicates if $VERSION was built and deployed successfully or not
+git push --tags git@github.com:gdndude/spawnpocassets.git 
