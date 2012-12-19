@@ -31,7 +31,9 @@ git checkout $VERSION
 
 #Build the gem and install it using the native tools, this makes the deb packing irrelevant
 #But we will to that anyway since averyone asked so nicely
-gem build spawnpocassets.gemspec
+
+mkdir /var/assets/spawnpocassets/$VERSION
+gem install spawnpocassets --install-dir=/var/assets/spawnpocassets/$VERSION
 
 #Some of this is brute force, we're pushing the asset each time which might be redundant
 gem push spawnpocassets-$VERSION.gem
@@ -40,7 +42,7 @@ gem push spawnpocassets-$VERSION.gem
 bundle
 rake -T
 rake build
-rake install 
+rake install
 rake release
 
 #Create a deb package using fpm and we will also go ahead and install it
@@ -48,11 +50,13 @@ gem fetch $PACKAGE --version $VERSION
 fpm -s gem -t deb spawnpocassets-$VERSION.gem
 dpkg --purge rubygem-$PACKAGE
 dpkg --install *.deb
-  
+ 
+#Grab the CI build hash so that we can track build success and failures
+BUILD=`git describe --all --long ` 
 #Check if there is an error
 if [ $? -gt 0 ]
-	then git tag build-failure-$VERSION
-	else git tag build-success-$VERSION
+	then git tag build-failure-$BUILD
+	else git tag build-success-$BUILD
 fi 
 
 #We push an updated tag that indicates if $VERSION was built and deployed successfully or not
