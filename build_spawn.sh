@@ -10,16 +10,17 @@ PACKAGE="spawnpocassets"
 VERSION=""
 INSTALLDIR="/var/assets/spawnpocassets/"
 
-#Check to see if a version number is set of passed
-if [ -n "${BUILD_NUMBER:+x}" ]
-	then VERSION=$BUILD_NUMBER
-fi
+#Check to see if a version number is set or passed
+	
+	if [ -n "${BUILD_NUMBER:+x}" ]
+		then VERSION=$BUILD_NUMBER
+	fi
 
-if [ -n "${1:+1}" ]
-	then VERSION=$1
-fi
+	if [ -n "${1:+1}" ]
+		then VERSION=$1
+	fi
 
-#Retrieve the correct version into a tmp directory
+#Retrieve the correct version into a temp directory
 	
 	cd $TMP
 
@@ -27,11 +28,12 @@ fi
 
 	rm -rf $TMP/$PACKAGE
 
-#Then we are going to remove the gem, strictly speaking this is not required but we're doing it to avoid confusion
+#Then we are going to remove the existing gem, strictly speaking 
+#this is not required but we're doing it to avoid confusion
 
 	gem uninstall spawnpocassets
 
-#Clone the head repository we extract out the tag later is needed
+#Clone the head repository, we extract out the tag (version) later as needed
 
 	git clone https://github.com/gdndude/spawnpocassets.git
 
