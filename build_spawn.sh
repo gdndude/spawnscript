@@ -8,7 +8,7 @@
 TMP="/tmp"
 PACKAGE="spawnpocassets"
 VERSION=""
-INSTALLDIR="/var/assets/spawnpocassets"$VERSION
+INSTALLDIR="/var/assets/spawnpocassets/"
 
 #Check to see if a version number is set of passed
 if [ -n "${BUILD_NUMBER:+x}" ]
@@ -20,56 +20,73 @@ if [ -n "${1:+1}" ]
 fi
 
 #Retrieve the correct version into a tmp directory
-cd $TMP
+	
+	cd $TMP
 
 #First let's clean out the working directory to avoid any issues
-rm -rf $TMP/$PACKAGE
+
+	rm -rf $TMP/$PACKAGE
 
 #Then we are going to remove the gem, strictly speaking this is not required but we're doing it to avoid confusion
-gem uninstall spawnpocassets
 
-git clone https://github.com/gdndude/spawnpocassets.git
+	gem uninstall spawnpocassets
+
+#Clone the head repository we extract out the tag later is needed
+
+	git clone https://github.com/gdndude/spawnpocassets.git
 
 #In the event the VERSION was empty we sync to head now 
 
-if [ -z "$VERSION" ]
-	then VERSION=`git describe --all`
-fi
-echo " Building from " $VERSION
-cd $PACKAGE
-git checkout $VERSION
+	if [ -z "$VERSION" ]
+		then VERSION=`git describe --all`
+	fi
+
+	echo " Building from " $VERSION
+	cd $PACKAGE
+	git checkout $VERSION
 
 #Build the gem and install it using the native tools, this makes the deb packing irrelevant
 #But we will to that anyway since averyone asked so nicely
 
-mkdir /var/assets/spawnpocassets/$VERSION
-gem install spawnpocassets --install-dir=/var/assets/spawnpocassets/$VERSION
+
+	INSTALLDIR=$INSTALLDIR$VERSION
+	mkdir $INSTALLDIR
+
+	gem install spawnpocassets --install-dir=$INSTALLDIR
 
 #Some of this is brute force, we're pushing the asset each time which might be redundant
+#Consider using a yank in the future, or checking the existing gem for integrity
 
-gem push spawnpocassets-$VERSION.gem
+	gem push spawnpocassets-$VERSION.gem
 
 #We install into the local CI environment to allow fpm to perform it's magic
 
-bundle
-rake -T
-rake build
-rake install
-rake release
+	bundle
+	rake -T
+	rake build
+	rake install
+	rake release
 
 #Create a deb package using fpm and we will also go ahead and install it
-gem fetch $PACKAGE --version $VERSION
-fpm -s gem -t deb spawnpocassets-$VERSION.gem
-dpkg --purge rubygem-$PACKAGE
-dpkg --install *.deb
+#First we remove the old package if it exists
+
+	gem fetch $PACKAGE --version $VERSION
+	fpm -s gem -t deb $PACKAGE-$VERSION.gem
+	dpkg --purge rubygem-$PACKAGE > /dev/null
+	dpkg --install *.deb
  
 #Grab the CI build hash so that we can track build success and failures
-BUILD=`git describe --all --long ` 
+	
+	BUILD=`git describe --all --long ` 
+
 #Check if there is an error
-if [ $? -gt 0 ]
-	then git tag build-failure-$BUILD
-	else git tag build-success-$BUILD
-fi 
+	
+	if [ $? -gt 0 ]
+		then git tag build-failure-$BUILD
+		else git tag build-success-$BUILD
+	fi 
 
 #We push an updated tag that indicates if $VERSION was built and deployed successfully or not
-git push --tags 
+	git push --tags 
+
+#That's it hombre
