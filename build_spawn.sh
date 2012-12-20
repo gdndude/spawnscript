@@ -57,7 +57,7 @@ fi
 #Some of this is brute force, we're pushing the asset each time which might be redundant
 #Consider using a yank in the future, or checking the existing gem for integrity
 
-	gem push spawnpocassets-$VERSION.gem
+	gem push $PACKAGE-$VERSION.gem
 
 #We install into the local CI environment to allow fpm to perform it's magic
 
