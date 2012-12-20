@@ -7,7 +7,10 @@
 
 TMP="/tmp"
 PACKAGE="spawnpocassets"
-VERSION="0.0.1"
+VERSION=""
+INSTALLDIR="/var/assets/spawnpocassets"$VERSION
+
+#Check to see if a version number is set of passed
 if [ -n "${BUILD_NUMBER:+x}" ]
 	then VERSION=$BUILD_NUMBER
 fi
@@ -15,17 +18,24 @@ fi
 if [ -n "${1:+1}" ]
 	then VERSION=$1
 fi
-echo "Building " $VERSION
 
 #Retrieve the correct version into a tmp directory
 cd $TMP
+
 #First let's clean out the working directory to avoid any issues
 rm -rf $TMP/$PACKAGE
-#Then we are going to remove the gem, strictly speaking this is not required but we're doing it to avoid confusion
 
+#Then we are going to remove the gem, strictly speaking this is not required but we're doing it to avoid confusion
 gem uninstall spawnpocassets
 
 git clone https://github.com/gdndude/spawnpocassets.git
+
+#In the event the VERSION was empty we sync to head now 
+
+if [ -z "$VERSION" ]
+	then VERSION=`git describe --all`
+fi
+echo " Building from " $VERSION
 cd $PACKAGE
 git checkout $VERSION
 
@@ -36,9 +46,11 @@ mkdir /var/assets/spawnpocassets/$VERSION
 gem install spawnpocassets --install-dir=/var/assets/spawnpocassets/$VERSION
 
 #Some of this is brute force, we're pushing the asset each time which might be redundant
+
 gem push spawnpocassets-$VERSION.gem
 
 #We install into the local CI environment to allow fpm to perform it's magic
+
 bundle
 rake -T
 rake build
